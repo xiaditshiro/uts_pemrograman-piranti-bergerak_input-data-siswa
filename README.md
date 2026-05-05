@@ -2,7 +2,7 @@
 
 Aplikasi Android untuk manajemen data siswa yang dibangun menggunakan Java dan Android Studio. Projek ini dibuat untuk memenuhi syarat UTS mata kuliah Pemrograman Piranti Bergerak.
 
-## 🚀 Fitur Utama
+## Fitur Utama
 Aplikasi ini menggabungkan beberapa materi utama yang diajarkan di kelas:
 
 1.  **Pengelolaan Data (SQLite)**:
@@ -24,12 +24,12 @@ Aplikasi ini menggabungkan beberapa materi utama yang diajarkan di kelas:
 *   **Penyimpanan Sesi**: SharedPreferences
 *   **UI Components**: RecyclerView, CardView, RelativeLayout, LinearLayout.
 
-## 📸 Akun Login Percobaan
+##  Akun Login Percobaan
 Gunakan akun berikut untuk masuk ke aplikasi:
 *   **Admin**: `admin` / `admin123`
 *   **Siswa**: `siswa` / `siswa123`
 
-## 📂 Struktur Folder Penting
+##  Struktur Folder Penting
 *   `MainActivity.java`: Halaman utama manajemen data siswa.
 *   `LoginActivity.java`: Halaman gerbang login.
 *   `DatabaseHelper.java`: Pengatur database SQLite.
