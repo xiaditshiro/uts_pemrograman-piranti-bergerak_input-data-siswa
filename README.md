@@ -18,7 +18,7 @@ Aplikasi ini menggabungkan beberapa materi utama yang diajarkan di kelas:
 4.  **Fitur Media**:
     *   Dukungan pemilihan foto siswa langsung dari galeri ponsel.
 
-## 🛠️ Teknologi yang Digunakan
+## Teknologi yang Digunakan
 *   **Bahasa**: Java
 *   **Database**: SQLite
 *   **Penyimpanan Sesi**: SharedPreferences
