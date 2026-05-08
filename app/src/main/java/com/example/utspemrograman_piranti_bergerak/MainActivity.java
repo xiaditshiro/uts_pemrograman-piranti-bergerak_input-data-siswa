@@ -8,7 +8,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.UUID;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -60,26 +66,36 @@ public class MainActivity extends AppCompatActivity {
             String nama = etNama.getText().toString();
             String nim = etNim.getText().toString();
             String strNilai = etNilai.getText().toString();
-            String fotoPath = (selectedImageUri != null) ? selectedImageUri.toString() : "";
 
             if (nama.isEmpty() || nim.isEmpty() || strNilai.isEmpty()) {
                 Toast.makeText(MainActivity.this, "Semua data harus diisi!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            int nilai = Integer.parseInt(strNilai);
-            boolean isSuccess = dbHelper.insertData(nama, nim, nilai, fotoPath);
+            try {
+                int nilai = Integer.parseInt(strNilai);
+                
+                // Simpan foto ke storage internal agar tidak hilang saat restart
+                String fotoPath = "";
+                if (selectedImageUri != null) {
+                    fotoPath = saveImageToInternal(selectedImageUri);
+                }
 
-            if (isSuccess) {
-                Toast.makeText(MainActivity.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
-                resetForm();
-                refreshData();
-            } else {
-                Toast.makeText(MainActivity.this, "Gagal menyimpan data!", Toast.LENGTH_SHORT).show();
+                boolean isSuccess = dbHelper.insertData(nama, nim, nilai, fotoPath);
+
+                if (isSuccess) {
+                    Toast.makeText(MainActivity.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    resetForm();
+                    refreshData();
+                } else {
+                    Toast.makeText(MainActivity.this, "Gagal menyimpan data!", Toast.LENGTH_SHORT).show();
+                }
+            } catch (NumberFormatException e) {
+                Toast.makeText(MainActivity.this, "Nilai harus berupa angka!", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Tombol Logout (Menambahkan fungsi logout)
+        // Tombol Logout (Klik pada judul "Data Siswa")
         findViewById(R.id.tvTitle).setOnClickListener(v -> {
             SharedPrefManager.getInstance(this).logout();
             startActivity(new Intent(this, LoginActivity.class));
@@ -108,18 +124,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Fungsi untuk menyalin gambar ke internal storage aplikasi
+    private String saveImageToInternal(Uri uri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            String fileName = "img_" + UUID.randomUUID().toString() + ".jpg";
+            File file = new File(getFilesDir(), fileName);
+            OutputStream outputStream = new FileOutputStream(file);
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, length);
+            }
+
+            outputStream.flush();
+            outputStream.close();
+            inputStream.close();
+
+            return file.getAbsolutePath();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
     private void refreshData() {
         ArrayList<HashMap<String, String>> dataSiswa = dbHelper.getAllSiswa();
         ArrayList<Siswa> listSiswa = new ArrayList<>();
 
         for (HashMap<String, String> map : dataSiswa) {
-            listSiswa.add(new Siswa(
-                    Integer.parseInt(map.get("id")),
-                    map.get("nama"),
-                    map.get("nim"),
-                    Integer.parseInt(map.get("nilai")),
-                    map.get("foto")
-            ));
+            try {
+                int id = Integer.parseInt(map.get("id"));
+                String nama = map.get("nama");
+                String nim = map.get("nim");
+                int nilai = Integer.parseInt(map.get("nilai") != null ? map.get("nilai") : "0");
+                String foto = map.get("foto");
+                
+                listSiswa.add(new Siswa(id, nama, nim, nilai, foto));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         SiswaAdapter adapter = new SiswaAdapter(this, listSiswa, siswa -> {

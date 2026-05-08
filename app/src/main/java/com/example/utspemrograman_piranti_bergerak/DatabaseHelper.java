@@ -60,18 +60,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_SISWA + " ORDER BY id DESC", null);
 
-        if (cursor.moveToFirst()) {
+        if (cursor != null && cursor.moveToFirst()) {
             do {
                 HashMap<String, String> map = new HashMap<>();
-                map.put("id", cursor.getString(0));
-                map.put("nama", cursor.getString(1));
-                map.put("nim", cursor.getString(2));
-                map.put("nilai", cursor.getString(3));
-                map.put("foto", cursor.getString(4));
+                map.put("id", cursor.getString(cursor.getColumnIndexOrThrow(COL_ID)));
+                map.put("nama", cursor.getString(cursor.getColumnIndexOrThrow(COL_NAMA)));
+                map.put("nim", cursor.getString(cursor.getColumnIndexOrThrow(COL_NIM)));
+                map.put("nilai", cursor.getString(cursor.getColumnIndexOrThrow(COL_NILAI)));
+                map.put("foto", cursor.getString(cursor.getColumnIndexOrThrow(COL_FOTO)));
                 listSiswa.add(map);
             } while (cursor.moveToNext());
+            cursor.close();
         }
-        cursor.close();
         return listSiswa;
     }
 

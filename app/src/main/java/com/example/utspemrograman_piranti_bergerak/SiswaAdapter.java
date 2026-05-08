@@ -44,7 +44,22 @@ public class SiswaAdapter extends RecyclerView.Adapter<SiswaAdapter.SiswaViewHol
         holder.tvNilai.setText(String.valueOf(siswa.getNilai()));
 
         if (siswa.getFoto() != null && !siswa.getFoto().isEmpty()) {
-            holder.ivFoto.setImageURI(Uri.parse(siswa.getFoto()));
+            String path = siswa.getFoto();
+            if (path.startsWith("/")) { // Cek apakah ini path file lokal (internal storage)
+                java.io.File imgFile = new java.io.File(path);
+                if (imgFile.exists()) {
+                    holder.ivFoto.setImageURI(Uri.fromFile(imgFile));
+                } else {
+                    holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
+                }
+            } else if (path.startsWith("content://")) {
+                // Ini adalah URI galeri. 
+                // Di Android modern, URI galeri lama akan menyebabkan CRASH jika diakses lagi.
+                // Jadi kita abaikan saja jika bukan path lokal.
+                holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
+            } else {
+                holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
         } else {
             holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
         }
