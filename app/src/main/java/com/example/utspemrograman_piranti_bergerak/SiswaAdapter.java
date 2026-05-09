@@ -17,16 +17,17 @@ public class SiswaAdapter extends RecyclerView.Adapter<SiswaAdapter.SiswaViewHol
 
     private Context context;
     private ArrayList<Siswa> listSiswa;
-    private OnItemLongClickListener longClickListener;
+    private OnItemClickListener clickListener;
 
-    public interface OnItemLongClickListener {
-        void onItemLongClick(Siswa siswa);
+    public interface OnItemClickListener {
+        void onEditClick(Siswa siswa);
+        void onDeleteClick(Siswa siswa);
     }
 
-    public SiswaAdapter(Context context, ArrayList<Siswa> listSiswa, OnItemLongClickListener longClickListener) {
+    public SiswaAdapter(Context context, ArrayList<Siswa> listSiswa, OnItemClickListener clickListener) {
         this.context = context;
         this.listSiswa = listSiswa;
-        this.longClickListener = longClickListener;
+        this.clickListener = clickListener;
     }
 
     @NonNull
@@ -45,18 +46,13 @@ public class SiswaAdapter extends RecyclerView.Adapter<SiswaAdapter.SiswaViewHol
 
         if (siswa.getFoto() != null && !siswa.getFoto().isEmpty()) {
             String path = siswa.getFoto();
-            if (path.startsWith("/")) { // Cek apakah ini path file lokal (internal storage)
+            if (path.startsWith("/")) {
                 java.io.File imgFile = new java.io.File(path);
                 if (imgFile.exists()) {
                     holder.ivFoto.setImageURI(Uri.fromFile(imgFile));
                 } else {
                     holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
                 }
-            } else if (path.startsWith("content://")) {
-                // Ini adalah URI galeri. 
-                // Di Android modern, URI galeri lama akan menyebabkan CRASH jika diakses lagi.
-                // Jadi kita abaikan saja jika bukan path lokal.
-                holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
             } else {
                 holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
             }
@@ -64,10 +60,8 @@ public class SiswaAdapter extends RecyclerView.Adapter<SiswaAdapter.SiswaViewHol
             holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
         }
 
-        holder.itemView.setOnLongClickListener(v -> {
-            longClickListener.onItemLongClick(siswa);
-            return true;
-        });
+        holder.btnEdit.setOnClickListener(v -> clickListener.onEditClick(siswa));
+        holder.btnDelete.setOnClickListener(v -> clickListener.onDeleteClick(siswa));
     }
 
     @Override
@@ -76,7 +70,7 @@ public class SiswaAdapter extends RecyclerView.Adapter<SiswaAdapter.SiswaViewHol
     }
 
     static class SiswaViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivFoto;
+        ImageView ivFoto, btnEdit, btnDelete;
         TextView tvNama, tvNim, tvNilai;
 
         public SiswaViewHolder(@NonNull View itemView) {
@@ -85,6 +79,8 @@ public class SiswaAdapter extends RecyclerView.Adapter<SiswaAdapter.SiswaViewHol
             tvNama = itemView.findViewById(R.id.tvNamaRow);
             tvNim = itemView.findViewById(R.id.tvNimRow);
             tvNilai = itemView.findViewById(R.id.tvNilaiRow);
+            btnEdit = itemView.findViewById(R.id.btnEditRow);
+            btnDelete = itemView.findViewById(R.id.btnDeleteRow);
         }
     }
 }

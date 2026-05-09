@@ -76,9 +76,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
-    // Hapus Data (Opsional tapi bagus untuk kelola data)
+    // Hapus Data
     public void deleteData(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_SISWA, COL_ID + "=?", new String[]{String.valueOf(id)});
+    }
+
+    // Update Data
+    public boolean updateData(int id, String nama, String nim, int nilai, String foto) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_NAMA, nama);
+        values.put(COL_NIM, nim);
+        values.put(COL_NILAI, nilai);
+        values.put(COL_FOTO, foto);
+        int result = db.update(TABLE_SISWA, values, COL_ID + "=?", new String[]{String.valueOf(id)});
+        return result > 0;
     }
 }

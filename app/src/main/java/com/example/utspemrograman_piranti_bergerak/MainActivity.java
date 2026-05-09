@@ -27,11 +27,13 @@ import java.util.HashMap;
 public class MainActivity extends AppCompatActivity {
 
     private EditText etNama, etNim, etNilai;
-    private Button btnSimpan, btnPilihFoto;
+    private Button btnSimpan, btnPilihFoto, btnBatal;
     private ImageView ivPreview;
     private RecyclerView rvSiswa;
     private DatabaseHelper dbHelper;
     private Uri selectedImageUri = null;
+    private int editingId = -1;
+    private String currentFotoPath = "";
 
     private static final int PICK_IMAGE_REQUEST = 1;
 
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         etNilai = findViewById(R.id.etNilai);
         btnSimpan = findViewById(R.id.btnSimpan);
         btnPilihFoto = findViewById(R.id.btnPilihFoto);
+        btnBatal = findViewById(R.id.btnBatal);
         ivPreview = findViewById(R.id.ivPreview);
         rvSiswa = findViewById(R.id.rvSiswa);
 
@@ -61,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(intent, PICK_IMAGE_REQUEST);
         });
 
-        // Tombol Simpan
+        // Tombol Simpan / Update
         btnSimpan.setOnClickListener(v -> {
             String nama = etNama.getText().toString();
             String nim = etNim.getText().toString();
@@ -75,16 +78,23 @@ public class MainActivity extends AppCompatActivity {
             try {
                 int nilai = Integer.parseInt(strNilai);
                 
-                // Simpan foto ke storage internal agar tidak hilang saat restart
-                String fotoPath = "";
+                String fotoPath = currentFotoPath;
                 if (selectedImageUri != null) {
                     fotoPath = saveImageToInternal(selectedImageUri);
                 }
 
-                boolean isSuccess = dbHelper.insertData(nama, nim, nilai, fotoPath);
+                boolean isSuccess;
+                if (editingId == -1) {
+                    // Mode Tambah
+                    isSuccess = dbHelper.insertData(nama, nim, nilai, fotoPath);
+                } else {
+                    // Mode Edit
+                    isSuccess = dbHelper.updateData(editingId, nama, nim, nilai, fotoPath);
+                }
 
                 if (isSuccess) {
-                    Toast.makeText(MainActivity.this, "Data berhasil disimpan!", Toast.LENGTH_SHORT).show();
+                    String pesan = (editingId == -1) ? "Data berhasil disimpan!" : "Data berhasil diperbarui!";
+                    Toast.makeText(MainActivity.this, pesan, Toast.LENGTH_SHORT).show();
                     resetForm();
                     refreshData();
                 } else {
@@ -102,7 +112,13 @@ public class MainActivity extends AppCompatActivity {
             finish();
         });
         
-        // Menampilkan sapaan user yang login
+        // Tombol Batal Edit
+        btnBatal.setOnClickListener(v -> {
+            resetForm();
+            Toast.makeText(this, "Edit dibatalkan", Toast.LENGTH_SHORT).show();
+        });
+
+
         String userName = SharedPrefManager.getInstance(this).getName();
         Toast.makeText(this, "Selamat Datang, " + userName, Toast.LENGTH_SHORT).show();
     }
@@ -113,6 +129,10 @@ public class MainActivity extends AppCompatActivity {
         etNilai.setText("");
         ivPreview.setImageResource(android.R.drawable.ic_menu_camera);
         selectedImageUri = null;
+        editingId = -1;
+        currentFotoPath = "";
+        btnSimpan.setText("SIMPAN DATA");
+        btnBatal.setVisibility(View.GONE);
     }
 
     @Override
@@ -167,18 +187,53 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        SiswaAdapter adapter = new SiswaAdapter(this, listSiswa, siswa -> {
-            new android.app.AlertDialog.Builder(this)
-                    .setTitle("Hapus Data")
-                    .setMessage("Hapus data " + siswa.getNama() + "?")
-                    .setPositiveButton("Ya", (dialog, which) -> {
-                        dbHelper.deleteData(siswa.getId());
-                        refreshData();
-                    })
-                    .setNegativeButton("Tidak", null)
-                    .show();
+        SiswaAdapter adapter = new SiswaAdapter(this, listSiswa, new SiswaAdapter.OnItemClickListener() {
+            @Override
+            public void onEditClick(Siswa siswa) {
+                prepareEdit(siswa);
+            }
+
+            @Override
+            public void onDeleteClick(Siswa siswa) {
+                confirmDelete(siswa);
+            }
         });
 
         rvSiswa.setAdapter(adapter);
+    }
+
+    private void prepareEdit(Siswa siswa) {
+        editingId = siswa.getId();
+        etNama.setText(siswa.getNama());
+        etNim.setText(siswa.getNim());
+        etNilai.setText(String.valueOf(siswa.getNilai()));
+        currentFotoPath = siswa.getFoto();
+        
+        if (currentFotoPath != null && !currentFotoPath.isEmpty()) {
+            File imgFile = new File(currentFotoPath);
+            if (imgFile.exists()) {
+                ivPreview.setImageURI(Uri.fromFile(imgFile));
+            }
+        }
+        
+        btnSimpan.setText("UPDATE DATA");
+        btnBatal.setVisibility(View.VISIBLE);
+        etNama.requestFocus();
+        Toast.makeText(this, "Silahkan ubah data", Toast.LENGTH_SHORT).show();
+    }
+
+    private void confirmDelete(Siswa siswa) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Hapus Data")
+                .setMessage("Hapus data " + siswa.getNama() + "?")
+                .setPositiveButton("Ya", (dialog, which) -> {
+                    dbHelper.deleteData(siswa.getId());
+                    refreshData();
+                    if (editingId == siswa.getId()) {
+                        resetForm();
+                    }
+                })
+                .setNegativeButton("Tidak", null)
+                .show();
     }
 }
